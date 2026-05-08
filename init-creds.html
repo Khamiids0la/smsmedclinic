@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Credentials Initialize - SMS Med Clinic</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Arial', sans-serif;
+    background: #0a0e1a;
+    color: #e8edf5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .container {
+    background: #111827;
+    border: 1px solid #1e2d45;
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: #00d4aa;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: #6b7a99;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  input {
+    width: 100%;
+    background: #0a0e1a;
+    border: 1.5px solid #1e2d45;
+    color: #e8edf5;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus {
+    border-color: #00d4aa;
+  }
+  button {
+    width: 100%;
+    background: #00d4aa;
+    color: #0a0e1a;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: opacity 0.15s;
+  }
+  button:hover {
+    opacity: 0.88;
+  }
+  .message {
+    margin-top: 20px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+  }
+  .message.success {
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34,197,94,0.3);
+    display: block;
+  }
+  .message.error {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239,68,68,0.3);
+    display: block;
+  }
+  .info {
+    background: rgba(79,142,247,0.15);
+    color: #4f8ef7;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    border: 1px solid rgba(79,142,247,0.3);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🔐 Parol Sozlash</h1>
+  
+  <div class="info">
+    <strong>⚠️ Eslatma:</strong> Bu sahifa faqat admin login va parol o'rnatish uchun. 
+    Birinchi marta ishlatiladi!
+  </div>
+
+  <div class="form-group">
+    <label>Admin Login</label>
+    <input type="text" id="username" placeholder="admin" value="admin">
+  </div>
+
+  <div class="form-group">
+    <label>Yangi Parol (min 6 ta belgi)</label>
+    <input type="password" id="password" placeholder="smsmed2025">
+  </div>
+
+  <div class="form-group">
+    <label>Parolni Tasdiqlash</label>
+    <input type="password" id="confirmPassword" placeholder="Takrorlang">
+  </div>
+
+  <button onclick="setCredentials()">💾 Parolni O'rnatish</button>
+
+  <div id="message" class="message"></div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAMJBINULwuBw0WD57CW2Ch1abicdVVmVo",
+    authDomain: "sms-med-clinic.firebaseapp.com",
+    databaseURL: "https://sms-med-clinic-default-rtdb.firebaseio.com",
+    projectId: "sms-med-clinic",
+    storageBucket: "sms-med-clinic.firebasestorage.app",
+    messagingSenderId: "683788619969",
+    appId: "1:683788619969:web:7ac2186a2e2ebe2093c440"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  function setCredentials() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    const messageEl = document.getElementById('message');
+
+    // Validation
+    if (!username || !password || !confirmPassword) {
+      showMessage('❌ Barcha maydonlar to\'ldirilishi kerak', 'error');
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage('❌ Parol kamida 6 ta belgidan iborat bo\'lishi kerak', 'error');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showMessage('❌ Parollar mos kelmadi', 'error');
+      return;
+    }
+
+    // Save to Firebase
+    const creds = {};
+    creds[username] = password;
+
+    db.ref('smsmed/credentials').set(creds).then(() => {
+      // Also save to localStorage
+      localStorage.setItem('smsmed_creds', JSON.stringify(creds));
+      showMessage('✅ Parol muvaffaqiyatli o\'rnatildi!\n\n🔑 Hozir kirish uchun:\nLogin: ' + username + '\nParol: ' + password, 'success');
+      
+      setTimeout(() => {
+        document.getElementById('username').value = 'admin';
+        document.getElementById('password').value = '';
+        document.getElementById('confirmPassword').value = '';
+      }, 2000);
+    }).catch(error => {
+      showMessage('❌ Xatolik: ' + error.message, 'error');
+    });
+  }
+
+  function showMessage(text, type) {
+    const messageEl = document.getElementById('message');
+    messageEl.textContent = text;
+    messageEl.className = 'message ' + type;
+  }
+
+  // Allow Enter key
+  document.getElementById('confirmPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') setCredentials();
+  });
+</script>
+
+</body>
+</html>
